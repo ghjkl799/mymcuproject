@@ -1,0 +1,28 @@
+eszközök:
+✓ mikrokontroller NodeMCU-ESP8266-CP https://www.hestore.hu/prod_10036631.html
+✓ hő+pára szenzor DHT22-M https://www.hestore.hu/prod_10036812.html
+
+- tápegység Akyga AK-L1-100 https://pcland.hu/akyga-ak-l1-100-led-tapegyseg-12v100w-154136
+
+Párásítás
+- ultrahangos párologtató HUMI-USB https://www.hestore.hu/prod_10041539.html
+- relé RELC-1CH-5V-UNI https://www.hestore.hu/prod_10041847.html
+    párásító ki-be kapcsoláshoz
+- Úszókapcsoló, folyadékszint kapcsoló P31-FLOATSW https://www.hestore.hu/prod_10041625.html#
+
+Hűtés
+- peltier modul TEC1-12705 https://www.hestore.hu/prod_10036429.html
+    hűtéshez
+- PWM feszültségszabályozó https://www.emag.hu/elektronikus-kapcsolo-mosfet-es-pwm-vezerlessel-4-60v-10a-600w-magas-alacsony-jel-triggerrel-bn317/pd/DHHB223BM/
+    peltier modul teljesítmény szabályozására
+    alternatíva: IRF520?
+    ha jól értem, akkor ez a mikrokontrollerről kap egy vezérlő jelet (PWM) és ez alapján ugyanígy kapcsolja a rá kötött táp->fogyasztót?
+    ha nem lehet ezzel teljesen kikapcsolni, akkor ez elé is egy relé
+
+
+egyéb kellékek:
+multiméter DT830D https://www.hestore.hu/prod_10042402.html
+kis hűtő borda
+nagy hűtő borda
+ventilátor 12V
+tartály párologtatóhoz
