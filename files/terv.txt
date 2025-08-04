@@ -11,11 +11,11 @@ Párásítás
 - Úszókapcsoló, folyadékszint kapcsoló P31-FLOATSW https://www.hestore.hu/prod_10041625.html#
 
 Hűtés
-- peltier modul TEC1-12705 https://www.hestore.hu/prod_10036429.html
+- peltier modul TEC1-12706 https://www.hestore.hu/prod_10024207.html
     hűtéshez
-- PWM feszültségszabályozó https://www.emag.hu/elektronikus-kapcsolo-mosfet-es-pwm-vezerlessel-4-60v-10a-600w-magas-alacsony-jel-triggerrel-bn317/pd/DHHB223BM/
+- PWM feszültségszabályozó 
+    https://www.hestore.hu/prod_10047366.html
     peltier modul teljesítmény szabályozására
-    alternatíva: IRF520?
     ha jól értem, akkor ez a mikrokontrollerről kap egy vezérlő jelet (PWM) és ez alapján ugyanígy kapcsolja a rá kötött táp->fogyasztót?
     ha nem lehet ezzel teljesen kikapcsolni, akkor ez elé is egy relé
 

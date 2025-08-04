@@ -3,6 +3,7 @@
 #include <DHT.h>
 
 bool debug = 0;
+int baud = 9600;
 
 //command
 bool hascommand = 0;
@@ -37,14 +38,16 @@ DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
 
-Serial.begin(115200);
+Serial.begin(baud);
 pinMode(ledPin, OUTPUT);
 Serial.println("started");
 
 }
 
 void loop() {
-
+read_temperature();
+delay(2000);
+return;
 blinkif();
 
 if(read_command())
@@ -89,7 +92,7 @@ if(read_command())
   }
 }
 
-delay(1);
+//delay(1);
 
 }
 
