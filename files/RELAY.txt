@@ -1,0 +1,3 @@
+RELAY
+HIGH TRIGGER    magas jel       NC off      NO on
+HIGH TRIGGER    alacsony jel    NC on       NO OFF

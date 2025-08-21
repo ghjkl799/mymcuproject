@@ -1,12 +1,15 @@
-const int MAX_COUNT_VALUES = 2;
-bool input_0_debug_on = true;
-bool input_1_led_on = true;
+#include "c:/Users/ghjkl/AppData/Local/Arduino15/packages/esp8266/hardware/esp8266/3.1.2/cores/esp8266/Arduino.h"
+const int MAX_COUNT_VALUES = 4;
+bool  input_0_debug_on = true;
+bool  input_1_led_on = true;
+bool  input_2_pwm_relay_on = false;
+int   input_3_pwm_i = 0;
 
 const int LED_ON_VALUE = LOW;
 const int LED_OFF_VALUE = HIGH;
 
-const int RELAY_PIN = 4;
-const int PWM_PIN = 5;
+const int RELAY_PIN = 4; //D2
+const int PWM_PIN = 5; //D1
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -27,9 +30,9 @@ void loop()
     debugln("config values:");
     debug("input_0_debug_on: "); debugln(String(input_0_debug_on));
     debug("input_1_led_on: "); debugln(String(input_1_led_on));
-    debugln("");
-
     set_led();
+    set_pwm_relay();
+    set_pwm_i();
   }
 
   // digitalWrite(LED_BUILTIN, LED_ON_VALUE);
@@ -80,6 +83,8 @@ bool parse_input_and_set(String input, char delimiter)
 
     input_0_debug_on = values[0] == "DEBUG_ON" ? true : false;
     input_1_led_on = values[1] == "LED_ON" ? true : false;
+    input_2_pwm_relay_on = values[2] == "PWM_RELAY_ON" ? true : false;
+    input_3_pwm_i = values[3].toInt();
 
     return true;
 }
@@ -108,6 +113,29 @@ void set_led()
   debug("setting led to: ");
   debugln(String(input_1_led_on ? "on" : "off"));
   digitalWrite(LED_BUILTIN, input_1_led_on ? LED_ON_VALUE : LED_OFF_VALUE);
+}
+
+void set_pwm_relay()
+{
+  debug("setting pwm relay:");
+  debugln(String(input_2_pwm_relay_on ? "on" : "off"));
+  digitalWrite(RELAY_PIN, input_2_pwm_relay_on ? HIGH : LOW);
+}
+
+void set_pwm_i()
+{
+  debug("setting pwm i: ");
+
+  if(input_2_pwm_relay_on)
+  {
+    debugln(String(input_3_pwm_i));
+    analogWrite(PWM_PIN, input_3_pwm_i);
+  }
+  else{
+    debugln("0");
+    analogWrite(PWM_PIN, 0);
+  }
+
 }
 
 void debug(String s)
