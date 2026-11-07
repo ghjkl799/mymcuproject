@@ -15,7 +15,7 @@ void reportState() {
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(74880);
   delay(100);
   Serial.println();
   Serial.println("blink: starting (3s on / 3s off)");
