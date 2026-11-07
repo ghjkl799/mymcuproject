@@ -44,7 +44,9 @@
   `GND1` -> ESP GND. `DC+/DC-` = load supply (3.7-27 V), kept isolated from ESP GND. Low-side switch: load on
   `OUTx+`/`OUTx-`, measure across those. 3.3 V input works (IN LED faint) and switches the output (user-verified).
   PWM must be ~100 Hz (`analogWriteFreq(100)`): gate discharges via 100k, too slow for 1 kHz.
-  API: `GET /api/pwm1`, `POST /api/pwm1?duty=0..100`. Slider control via D1 user-verified with a meter.
+  API: `GET /api/pwm1`, `POST /api/pwm1?duty=0..100`. Slider control via D1 user-verified with a meter and a
+  12 V fan (Delta EFB0412HHD: red -> OUT1+, black -> OUT1-, white = tach, unconnected).
+- Session log / decisions: `notes/2026-11-07-session.md`.
 - Free GPIOs for later: D6 (GPIO12), D7 (GPIO13); D0 (GPIO16) has no PWM.
 - Sketch gotcha: declare all structs before the first function — the Arduino preprocessor inserts auto-prototypes there.
 - Avoid D3/D4/D8 (GPIO0/2/15) for peripherals: boot-mode pins. D4 is also the built-in LED.
