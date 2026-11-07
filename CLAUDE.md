@@ -40,6 +40,13 @@
   (GPIO HIGH = on = COM-NO closed; see `files/RELAY.txt`). Driven OFF first thing in `setup()`.
   (`_old/.../egycommand` had the relay on D2 — moved to D5 because D2 is now the DHT22.)
 - API: `GET /api/relay`, `POST /api/relay?state=on|off|toggle`. LED and relay share the `Output` struct in the sketch.
+- PWMMOS-4 (4-ch MOSFET board, 60N03 MOSFETs, LTV217 opto inputs; datasheet hestore prod_10047366): `PWM1` -> D1 (GPIO5),
+  `GND1` -> ESP GND. `DC+/DC-` = load supply (3.7-27 V), kept isolated from ESP GND. Low-side switch: load on
+  `OUTx+`/`OUTx-`, measure across those. 3.3 V input works (IN LED faint) and switches the output (user-verified).
+  PWM must be ~100 Hz (`analogWriteFreq(100)`): gate discharges via 100k, too slow for 1 kHz.
+  API: `GET /api/pwm1`, `POST /api/pwm1?duty=0..100`. Slider control via D1 user-verified with a meter.
+- Free GPIOs for later: D6 (GPIO12), D7 (GPIO13); D0 (GPIO16) has no PWM.
+- Sketch gotcha: declare all structs before the first function — the Arduino preprocessor inserts auto-prototypes there.
 - Avoid D3/D4/D8 (GPIO0/2/15) for peripherals: boot-mode pins. D4 is also the built-in LED.
   `flush.cmd` in the folder compiles + uploads (note: strip trailing `\` from `%~dp0` before quoting it).
 

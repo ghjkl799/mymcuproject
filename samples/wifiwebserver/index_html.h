@@ -46,6 +46,12 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(<!DOCTYPE html>
   td:last-child { font-family: ui-monospace, monospace; color: #fda; }
   .note { color: #888; font-size: .8rem; margin: .4rem 0 0; }
   #err { color: #f66; min-height: 1.2em; }
+  .duty { font-size: 2.2rem; font-weight: 600; color: #b8f; font-variant-numeric: tabular-nums;
+          margin: .5rem 0 1rem; }
+  .bar { width: 100%; height: 10px; background: #2a2a2a; border-radius: 5px; overflow: hidden;
+         margin-bottom: 1.25rem; }
+  .bar div { height: 100%; width: 0; background: #b8f; transition: width .2s; }
+  input[type=range] { width: 100%; accent-color: #b8f; margin: 0 0 1.25rem; }
 </style>
 </head>
 <body>
@@ -77,6 +83,18 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(<!DOCTYPE html>
   </section>
 
   <section>
+    <h1>PWM channel 1</h1>
+    <div class="duty"><span id="pwm1-val">--</span><span class="unit">%</span></div>
+    <div class="bar"><div id="pwm1-bar"></div></div>
+    <input id="pwm1-slider" type="range" min="0" max="100" step="1" value="0">
+    <div class="buttons">
+      <button onclick="setPwm('pwm1',0)">Off</button>
+      <button onclick="setPwm('pwm1',50)">50%</button>
+      <button onclick="setPwm('pwm1',100)">100%</button>
+    </div>
+  </section>
+
+  <section>
     <h1>Built-in LED</h1>
     <div id="led-ind" class="ind led"></div>
     <div id="led-state" class="state">...</div>
@@ -100,8 +118,15 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(<!DOCTYPE html>
       <tr><td>DC&minus;</td><td>GND</td></tr>
       <tr><td>IN</td><td>D5 (GPIO14)</td></tr>
       <tr><td>Trigger jumper</td><td>H (high)</td></tr>
+      <tr><th colspan="2">PWMMOS-4 channel 1</th></tr>
+      <tr><td>PWM1</td><td>D1 (GPIO5)</td></tr>
+      <tr><td>GND1</td><td>GND</td></tr>
+      <tr><td>DC+ / DC&minus;</td><td>load supply (not ESP)</td></tr>
+      <tr><td>OUT1+ / OUT1&minus;</td><td>load</td></tr>
     </table>
     <p class="note">Relay ON = COM&ndash;NO closed, COM&ndash;NC open.</p>
+    <p class="note">PWM: 100 Hz. Output is the full DC+ voltage pulsed; a meter shows the average.
+      Measure across OUT1+ and OUT1&minus;.</p>
   </details>
 
   <div id="err"></div>
@@ -123,6 +148,38 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(<!DOCTYPE html>
     fetch('/api/' + name + '?state=' + s, { method: 'POST' })
       .then(r => r.json()).then(d => showOut(name, d)).catch(fail);
   }
+  // PWM: while the slider is being dragged, polling must not move it back.
+  let dragging = false, sendTimer = null;
+  function showPwm(name, d) {
+    const v = d[name];
+    $(name + '-val').textContent = v;
+    $(name + '-bar').style.width = v + '%';
+    if (!dragging) $(name + '-slider').value = v;
+    ok();
+  }
+  function getPwm(name) {
+    fetch('/api/' + name).then(r => r.json()).then(d => showPwm(name, d)).catch(fail);
+  }
+  function setPwm(name, duty) {
+    fetch('/api/' + name + '?duty=' + duty, { method: 'POST' })
+      .then(r => r.json()).then(d => showPwm(name, d)).catch(fail);
+  }
+  (function () {
+    const s = $('pwm1-slider');
+    s.addEventListener('pointerdown', () => dragging = true);
+    s.addEventListener('input', () => {
+      dragging = true;
+      $('pwm1-val').textContent = s.value;
+      clearTimeout(sendTimer);                       // send at most every 150 ms while dragging
+      sendTimer = setTimeout(() => setPwm('pwm1', s.value), 150);
+    });
+    s.addEventListener('change', () => {
+      clearTimeout(sendTimer);
+      setPwm('pwm1', s.value);
+      dragging = false;
+    });
+  })();
+
   function showSensor(d) {
     const m = $('smeta');
     if (d.ok) {
@@ -140,6 +197,7 @@ static const char INDEX_HTML[] PROGMEM = R"rawliteral(<!DOCTYPE html>
   }
   function refresh() {
     getOut('relay');
+    getPwm('pwm1');
     getOut('led');
     fetch('/api/sensor').then(r => r.json()).then(showSensor).catch(fail);
   }

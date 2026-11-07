@@ -11,13 +11,18 @@
 //   DHT22-M module:      +  -> 3V3,      OUT -> D2 (GPIO4),  - -> GND
 //   RELC-1CH-5V-UNI:     DC+ -> VIN (5V), IN  -> D5 (GPIO14), DC- -> GND
 //                        trigger jumper on HIGH (GPIO HIGH = relay on, NO closed)
+//   PWMMOS-4 (ch. 1):    PWM1 -> D1 (GPIO5), GND1 -> GND   (input is opto-isolated)
+//                        DC+/DC- = load supply (NOT connected to ESP GND), load on OUT1+/OUT1-
+//                        PWM at 100 Hz: the board's opto/gate circuit turns off too slowly for 1 kHz.
 //
 // API:
 //   GET  /api/led                        -> {"led":"on"|"off"}
 //   POST /api/led?state=on|off|toggle    -> new state as JSON
 //   GET  /api/relay                      -> {"relay":"on"|"off"}
 //   POST /api/relay?state=on|off|toggle  -> new state as JSON
-//   GET  /api/sensor                     -> {"ok":true,"temperature":23.4,"humidity":45.6,"age_ms":812}
+//   GET  /api/pwm1                       -> {"pwm1":0..100}  (duty cycle, %)
+//   POST /api/pwm1?duty=0..100           -> new duty as JSON
+//   GET  /api/sensor                    -> {"ok":true,"temperature":23.4,"humidity":45.6,"age_ms":812}
 //                                           {"ok":false,"error":"...","age_ms":...} if no valid reading
 
 #include <ESP8266WiFi.h>
@@ -42,6 +47,18 @@ struct Output {
 
 Output led   = { "led",   LED_BUILTIN, LOW,  false };  // built-in LED is active LOW
 Output relay = { "relay", 14,          HIGH, false };  // D5, module in HIGH-trigger mode
+
+// PWM output (duty cycle in percent).
+// Note: all structs must be declared before the first function, because the
+// Arduino preprocessor inserts auto-generated prototypes there.
+struct PwmOutput {
+  const char* name;
+  uint8_t pin;
+  uint8_t duty;   // 0..100
+};
+
+const uint32_t PWM_FREQ_HZ = 100;
+PwmOutput pwm1 = { "pwm1", 5, 0 };  // D1 -> PWMMOS-4 PWM1
 
 void setOutput(Output& o, bool on) {
   o.on = on;
@@ -74,6 +91,39 @@ void registerOutput(Output& o) {
   String path = String("/api/") + o.name;
   server.on(path, HTTP_GET,  [&o] { sendOutputState(o); });
   server.on(path, HTTP_POST, [&o] { handleOutputSet(o); });
+}
+
+void setPwm(PwmOutput& p, uint8_t duty) {
+  p.duty = duty;
+  analogWrite(p.pin, duty);  // range is set to 100, so value = percent
+}
+
+void sendPwmState(PwmOutput& p) {
+  char buf[40];
+  snprintf(buf, sizeof(buf), "{\"%s\":%u}", p.name, p.duty);
+  server.send(200, "application/json", buf);
+}
+
+void handlePwmSet(PwmOutput& p) {
+  String s = server.arg("duty");
+  char* end;
+  long d = strtol(s.c_str(), &end, 10);
+  if (s.length() == 0 || *end != '\0' || d < 0 || d > 100) {
+    server.send(400, "text/plain", "duty must be an integer 0..100");
+    return;
+  }
+  setPwm(p, (uint8_t)d);
+  Serial.printf("%s -> %u%% (from %s)\n", p.name, p.duty,
+                server.client().remoteIP().toString().c_str());
+  sendPwmState(p);
+}
+
+void registerPwm(PwmOutput& p) {
+  pinMode(p.pin, OUTPUT);
+  setPwm(p, 0);
+  String path = String("/api/") + p.name;
+  server.on(path, HTTP_GET,  [&p] { sendPwmState(p); });
+  server.on(path, HTTP_POST, [&p] { handlePwmSet(p); });
 }
 
 // Latest sensor reading, refreshed in loop(); the API serves this cached value
@@ -117,8 +167,11 @@ void handleRoot() {
 }
 
 void setup() {
-  // Outputs first, so the relay is driven OFF as early as possible after boot.
+  // Outputs first, so the relay and PWM are driven OFF as early as possible after boot.
+  analogWriteFreq(PWM_FREQ_HZ);
+  analogWriteRange(100);
   registerOutput(relay);
+  registerPwm(pwm1);
   registerOutput(led);
 
   Serial.begin(74880);
