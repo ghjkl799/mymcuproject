@@ -30,7 +30,17 @@
 ## Projects
 - `samples/blink/` — built-in LED 3 s on / 3 s off, prints `[ms] LED ON/OFF (cycle n)` over serial.
 - `samples/wifiwebserver/` — joins home Wi-Fi (STA), serves LED control page on `/` (HTML in `index_html.h`,
-  PROGMEM) + API: `GET /api/led`, `POST /api/led?state=on|off|toggle`. IP is DHCP (was 192.168.0.10), printed on serial.
+  PROGMEM) + API: `GET /api/led`, `POST /api/led?state=on|off|toggle`, `GET /api/sensor` (cached DHT22 reading,
+  refreshed every 2.5 s in `loop()`). IP is DHCP (was 192.168.0.10), printed on serial.
+
+## Wiring
+- DHT22-M module (3-pin, pull-up on board): `+` -> 3V3, `OUT` -> D2 (GPIO4), `-` -> GND. Libs: "DHT sensor library",
+  "Adafruit Unified Sensor". Power from 3V3, not VIN/5V (module pull-up would put 5 V on the GPIO).
+- RELC-1CH-5V-UNI relay: `DC+` -> VIN (5V from USB), `DC-` -> GND, `IN` -> D5 (GPIO14), trigger jumper = HIGH
+  (GPIO HIGH = on = COM-NO closed; see `files/RELAY.txt`). Driven OFF first thing in `setup()`.
+  (`_old/.../egycommand` had the relay on D2 — moved to D5 because D2 is now the DHT22.)
+- API: `GET /api/relay`, `POST /api/relay?state=on|off|toggle`. LED and relay share the `Output` struct in the sketch.
+- Avoid D3/D4/D8 (GPIO0/2/15) for peripherals: boot-mode pins. D4 is also the built-in LED.
   `flush.cmd` in the folder compiles + uploads (note: strip trailing `\` from `%~dp0` before quoting it).
 
 ## Secrets
