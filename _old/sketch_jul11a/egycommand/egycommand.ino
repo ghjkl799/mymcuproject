@@ -21,6 +21,8 @@ void setup() {
   Serial.begin(115200);
 
   set_led();
+  set_pwm_relay();
+  set_pwm_i();
 }
 
 void loop()
