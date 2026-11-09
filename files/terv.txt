@@ -2,27 +2,70 @@ eszközök:
 ✓ mikrokontroller NodeMCU-ESP8266-CP https://www.hestore.hu/prod_10036631.html
 ✓ hő+pára szenzor DHT22-M https://www.hestore.hu/prod_10036812.html
 
-- tápegység Akyga AK-L1-100 https://pcland.hu/akyga-ak-l1-100-led-tapegyseg-12v100w-154136
+Táp
+- régi PC tápegység MATX-400
+    +3,3V: 0,5-25A | +5V: 0,5-28A | +12V: 1-22A | -12V: 0-0,5A | +5VSB: 0-2A
+    bekapcsolás: zöld (PS_ON) -> fekete (GND), később ESP-ről tranzisztorral kapcsolható
+    elosztás:
+      +12V (sárga)   -> BTS7960 B+ (Peltier), PWMMOS DC+ (ventilátorok)
+                        a Peltierhez a 4 tűs CPU csatlakozó (P4) 2 sárga + 2 fekete vezetéke párhuzamosan
+      +5VSB (lila)   -> NodeMCU VIN, relé DC+ (mindig van feszültség, amíg a táp a konnektorban van)
+      +5V (piros)    -> párásító (relén keresztül), terhelő ellenállás
+      GND (fekete)   -> közös föld; a Peltier árama külön vastag vezetéken menjen vissza
+- terhelő ellenállás 10 Ohm / 5W (cement) a +5V-ra
+    a táp minimális terhelése az 5V ágon 0,5A, enélkül a 12V elmászhat
+    2,5W-ot fűt -> szellős helyre / fémre
+    teszt: 12V mérése terhelés nélkül és Peltierrel, 11,4-12,6V között kell lennie
+    (+3,3V min. 0,5A: csak ha a mérésnél gond van, 6,8 Ohm / 3W)
 
 Párásítás
 - ultrahangos párologtató HUMI-USB https://www.hestore.hu/prod_10041539.html
+    5V, a táp +5V ágáról, relén keresztül
 - relé RELC-1CH-5V-UNI https://www.hestore.hu/prod_10041847.html
     párásító ki-be kapcsoláshoz
 - Úszókapcsoló, folyadékszint kapcsoló P31-FLOATSW https://www.hestore.hu/prod_10041625.html#
+    kevés víznél a párásító nem indulhat (szárazon tönkremegy)
 
-Hűtés
+Hűtés / fűtés
 - peltier modul TEC1-12706 https://www.hestore.hu/prod_10024207.html
-    hűtéshez
-- PWM feszültségszabályozó 
-    https://www.hestore.hu/prod_10047366.html
-    peltier modul teljesítmény szabályozására
-    ha jól értem, akkor ez a mikrokontrollerről kap egy vezérlő jelet (PWM) és ez alapján ugyanígy kapcsolja a rá kötött táp->fogyasztót?
-    ha nem lehet ezzel teljesen kikapcsolni, akkor ez elé is egy relé
+    hűtés és fűtés: a polaritás megfordításával megfordul a hőáramlás iránya
+    kb. 6A 12V-on
+- H-híd BTS7960 (IBT-2, 43A) modul
+    Peltier irányváltáshoz (hűtés / fűtés)
+    B+/B- = 12V táp, M+/M- = Peltier
+    VCC -> ESP 3V3 (3,3V-os vezérlőjelhez), R_EN + L_EN -> VCC
+    RPWM = hűtés, LPWM = fűtés (sima digitalWrite elég), 10k lehúzó a két lábon
+    R_IS/L_IS áramérzékelés: opcionális, ESP A0
+    figyelem: nincs leválasztás, az ESP GND közös a 12V GND-vel
+    irányváltás előtt 3-5 perc szünet (hősokk)
+- 2 ventilátor 12V a Peltierre
+    belső: a doboz felé fúj (hideg / meleg levegő)
+    külső: kifelé, a másik oldal hőjét viszi el
+    mindig menjenek, ha a Peltier megy, leállás után még 1-2 percig
+- MOSFET modul PWMMOS-4 https://www.hestore.hu/prod_10047366.html
+    ventilátorok kapcsolásához: ch1 = Peltier ventilátorok, ch2 = szellőztető ventilátor
+    100 Hz PWM (analogWriteFreq(100)), optocsatolós bemenet, a terhelés táp leválasztva
+- túlmelegedés védelem: 2x DS18B20 a két bordán (közös OneWire vezeték)
 
+Szellőztetés (friss levegő, CO2 eltávolítás)
+- CO2 szenzor SCD41 (Sensirion, I2C, 3,3V)
+    400-5000 ppm (az SCD40 csak 2000-ig), hőmérsékletet és páratartalmat is mér
+    -> kiválthatja a DHT22-t (magas páratartalomnál is megbízhatóbb)
+- szellőztető ventilátor 12V, elszívás a dobozból kifelé, PWMMOS ch2
+    vezérlés: CO2 küszöb hiszterézissel (pl. 1000 ppm felett BE, 800 alatt KI)
+    + időzített minimum szellőztetés (pl. óránként 1-2 perc), ha a szenzor hibás
+- passzív légbeömlő nyílás szűrővel (spóra / por ellen) a túloldalon, ezen jön be a friss levegő
+    elszívás után a hőmérséklet és pára leesik -> a szabályozás ezt kompenzálja
+
+Szabályozás
+- ki/be hiszterézissel + minimum be/ki idővel (pl. 60s)
+- hőmérséklet: HŰTÉS / ÜRESJÁRAT / FŰTÉS, a két sáv között holtsáv
+- pára: pl. 85% alatt BE, 92% felett KI
+- szenzorhiba (NaN) -> minden kimenet KI
 
 egyéb kellékek:
 multiméter DT830D https://www.hestore.hu/prod_10042402.html
-kis hűtő borda
-nagy hűtő borda
-ventilátor 12V
+kis hűtő borda (belső oldal)
+nagy hűtő borda (külső oldal)
+ventilátor 12V (2 db)
 tartály párologtatóhoz
